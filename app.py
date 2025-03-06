@@ -76,5 +76,6 @@ atualizacao_chamados: List = func.verifica_status_chamado(lista_atualizada_share
 
 share_point_atualizada.UpdateListItems(data=atualizacao_chamados, kind='Update')
 
+logger.info("Atualização realizada com sucesso !")
 
 
