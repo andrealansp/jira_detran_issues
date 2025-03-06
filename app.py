@@ -13,7 +13,7 @@ impureza, paixão lasciva, desejo maligno e a avareza, que é idolatria
 
 Projeto realizado para integrar JIRA + SHAREPOINT + POWER APPS
 """
-
+import logging
 from typing import List
 
 import shareplum
@@ -25,6 +25,11 @@ from classes.funcoes import  Funcoes
 from classes.acesso_jira import AcessoJira
 
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='app.log', format='%(asctime)s - %(levelname)s: %(message)s', encoding='utf-8',
+                    level=logging.INFO)
+
+
 # Carregar Lista do SharePoint, após essa carga utilizo a lista para verificar quais chamados da lista do sharepoint
 # não está na lista do JIRA.
 try:
@@ -33,8 +38,8 @@ try:
     lista_chamados_abertos = site.List("chamados_abertos")
     chamados_abertos_sharepoint: List = lista_chamados_abertos.get_list_items('All Items')
 except Exception as e:
-    print(traceback.format_exc())
     print("Favor verificar usuário e senha ! - " + e.args[1])
+    logger.error("Erro no acesso ao sharepoint:  - " + traceback.format_exc())
     exit()
 
 # Carregar chamados do JIRA, após esse carga do Jira utilizo a classe Funções para verificar quais chamados do jira
@@ -49,8 +54,9 @@ diferenca_chamados_sp = func.retorna_chamados_diferentes(chamados_abertos_sharep
 # Quando há a diferença no jira, criamos os chamados.
 if diferenca_chamados_jira:
     lista_chamados_abertos.UpdateListItems(data=diferenca_chamados_jira, kind='New')
+    logger.info(f"Adição - {len(lista_chamados_abertos)}")
 else:
-    print("Sem chamados para adicionar")
+    logger.info("Adição - Sem chamados para adicionar !")
 
 # Excluir Chamados do jira já resolvidos na lista do sharepoint.
 if diferenca_chamados_sp:
@@ -58,8 +64,9 @@ if diferenca_chamados_sp:
     for chamado_a_excluir in diferenca_chamados_sp:
         lista_ids_delete.append(chamado_a_excluir['ID'])
     lista_chamados_abertos.update_list_items(data=lista_ids_delete, kind="Delete")
+    logger.info(f"Exclusão - Removidos  {len(lista_ids_delete)}!")
 else:
-    print("Sem chamados para excluir")
+    logger.info("Exclusão - Sem chamados para remover !")
 
 # Carrega o novo status da Lista do share point, compara com a lista do Jira e atualiza
 share_point_atualizada = site.List("chamados_abertos")
